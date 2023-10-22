@@ -19,9 +19,12 @@ spring:
     active: production
   main:
     allow-bean-definition-overriding: true
+    allow-circular-references: true
 server:
   port: 9001
 
 
 jwt:
     secret: c3ByaW5nLWJvb3Qtc2VjdXJpdHktand0LXR1dG9yaWFsLWppd29vbi1zcHJpbmctYm9vdC1zZWN1cml0eS1qd3QtdHV0b3JpYWwK
+
+
