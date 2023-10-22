@@ -50,13 +50,17 @@ public class TokenProvider {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(","));
 
+        String roles = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.joining(","));
         long now = (new Date()).getTime();
+
 
         // Create Access Token
         Date accessTokenExpiresIn = new Date(now + ACCESS_TOKEN_EXPIRE_TIME);
         String accessToken = Jwts.builder()
                 .setSubject(authentication.getName())       // payload "sub": "name"
-                .claim(AUTHORITIES_KEY, authorities)        // payload "auth": "ROLE_USER"
+                .claim(AUTHORITIES_KEY, roles)        // payload "auth": "ROLE_USER"
                 .setExpiration(accessTokenExpiresIn)        // payload "exp": 1516239022 (예시)
                 .signWith(key, SignatureAlgorithm.HS512)    // header "alg": "HS512"
                 .compact();
@@ -95,20 +99,21 @@ public class TokenProvider {
         return new UsernamePasswordAuthenticationToken(principal, "", authorities);
     }
 
-    public boolean validateToken(String token) {
+    public String validateToken(String token) {
         try {
-            Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
-            return true;
+            Claims claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
+            String role = (String) claims.get("auth");
+            return role;
         } catch (io.jsonwebtoken.security.SecurityException | MalformedJwtException e) {
             log.info("Wrong JWT signature.");
         } catch (ExpiredJwtException e) {
-            log.info("It is an expied JWT token.");
+            log.info("It is an expired JWT token.");
         } catch (UnsupportedJwtException e) {
             log.info("It is an unsupported JWT token.");
         } catch (IllegalArgumentException e) {
             log.info("There's something wrong with JWT token.");
         }
-        return false;
+        return null;
     }
 
     private Claims parseClaims(String accessToken) {
