@@ -15,12 +15,18 @@ import jakarta.transaction.Transactional;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 
 
 import lombok.RequiredArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -51,8 +57,19 @@ public class AuthService {
         //    when authenticate method is called, loadUserByUsername in CustomUserDetailsService is called
         Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
 
+        Member member = memberRepository.findByEmail(signinRequest.getEmail()).orElseThrow();
+        // Kullanıcı rollerini döngü ile alın ve SimpleGrantedAuthority nesnelerine çevirip Authentication'a ekleyin
+        List<GrantedAuthority> authorities = new ArrayList<>(authentication.getAuthorities());
+
+        for (String role : member.getRoles()) {
+            authorities.add(new SimpleGrantedAuthority(role));
+        }
+
+        // Oluşturulan authorities listesini kullanarak yeni bir Authentication nesnesi oluşturun
+        Authentication authenticatedUser = new UsernamePasswordAuthenticationToken(authentication.getPrincipal(), authentication.getCredentials(), authorities);
+
         // 3. Generate JWT token based on given info
-        TokenRequest tokenRequest = tokenProvider.generateTokenDto(authentication);
+        TokenRequest tokenRequest = tokenProvider.generateTokenDto(authenticatedUser);
 
         // 4. Save RefreshToken
         RefreshToken refreshToken = RefreshToken.builder()
@@ -67,10 +84,15 @@ public class AuthService {
     }
 
     @Transactional
+    public String validateToken(String token) {
+        return tokenProvider.validateToken(token);
+    }
+
+    @Transactional
     public TokenRequest reissue(TokenRequest tokenRequest) {
         // 1. validate a Refresh Token
-        if (!tokenProvider.validateToken(tokenRequest.getRefreshToken())) {
-            throw new RuntimeException("Invail Refresh Token.");
+        if (tokenProvider.validateToken(tokenRequest.getRefreshToken())==null) {
+            throw new RuntimeException("Invalid Refresh Token.");
         }
 
         // 2. Fetch Member ID from an access token
