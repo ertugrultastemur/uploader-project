@@ -9,11 +9,9 @@ import com.example.authenticationservice.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-
+import org.springframework.web.bind.annotation.*;
 
 
 import lombok.RequiredArgsConstructor;
@@ -24,7 +22,8 @@ import lombok.RequiredArgsConstructor;
 public class AuthController {
 
     private final AuthService authService;
-    
+
+
     @PostMapping("/login")
     public ResponseEntity<TokenRequest> login(@RequestBody @Valid final SigninRequest signinRequest) {
         return ResponseEntity.ok(authService.signin(signinRequest));
@@ -35,6 +34,11 @@ public class AuthController {
         authService.signup(signupRequest);
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @GetMapping("/validate")
+    public ResponseEntity<String> validate(@RequestParam("token") String token){
+        return ResponseEntity.ok(authService.validateToken(token));
     }
 
     @PostMapping("/token")
