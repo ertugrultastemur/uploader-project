@@ -30,8 +30,8 @@ public class JwtFilter extends OncePerRequestFilter {
         String jwt = resolveToken(request);
 
         // 2. see if the token is valid with validateToken method
-        // If it is valid, brong Authentication and put it into SecurityContext
-        if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
+        // If it is valid, wrong Authentication and put it into SecurityContext
+        if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)!=null) {
             Authentication authentication = tokenProvider.getAuthentication(jwt);
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
