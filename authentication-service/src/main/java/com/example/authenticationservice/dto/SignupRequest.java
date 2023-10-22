@@ -13,6 +13,8 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Set;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -24,8 +26,10 @@ public class SignupRequest {
 
     private String password;
 
+    private Set<String> roles;
+
     public Member toMember(PasswordEncoder passwordEncoder) {
-        Member member = new Member(email, passwordEncoder.encode(password));
+        Member member = new Member(email, passwordEncoder.encode(password),roles);
         return member;
     }
     
