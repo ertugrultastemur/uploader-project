@@ -1,89 +1,55 @@
 package com.example.gateway.configs;
 
-import com.example.gateway.service.JwtUtils;
-import com.example.gateway.util.JwtUtil;
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.interfaces.Claim;
+import com.auth0.jwt.interfaces.DecodedJWT;
+
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
-import org.springframework.cloud.gateway.filter.GatewayFilter;
-import org.springframework.cloud.gateway.filter.GatewayFilterChain;
-import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.http.server.reactive.ServerHttpResponse;
-import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.server.ServerWebExchange;
-import reactor.core.publisher.Mono;
 
+import org.springframework.cloud.gateway.filter.GatewayFilter;
+import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.*;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClientResponseException;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.Arrays;
 import java.util.List;
 
-@RefreshScope
 @Component
-//@ConfigurationProperties("authentication-filter")
+@RequiredArgsConstructor
 public class AuthenticationFilter extends AbstractGatewayFilterFactory<AuthenticationFilter.Config> {
-/*
 
-    private final RouteValidator validator;
-
-    private final JwtUtils jwtUtils;
-
-    public AuthenticationFilter(RouteValidator validator, JwtUtils jwtUtils) {
-        this.validator = validator;
-        this.jwtUtils = jwtUtils;
-    }
-
-    @Override
-    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        ServerHttpRequest request = exchange.getRequest();
-
-        if (validator.isSecured.test(request)) {
-            if (authMissing(request)) {
-                return onError(exchange);
-            }
-
-            final String token = request.getHeaders().getOrEmpty("Authorization").get(0);
-
-            if (jwtUtils.isExpired(token)) {
-                return onError(exchange);
-            }
-        }
-        return chain.filter(exchange);
-    }
-
-    private Mono<Void> onError(ServerWebExchange exchange) {
-        ServerHttpResponse response = exchange.getResponse();
-        response.setStatusCode(HttpStatus.UNAUTHORIZED);
-        return response.setComplete();
-    }
-
-    private boolean authMissing(ServerHttpRequest request) {
-        return !request.getHeaders().containsKey("Authorization");
-    }
-    */
-
-    Logger logger = LoggerFactory.getLogger(AuthenticationFilter.class);
-    private final RouteValidator validator;
 
     private final RestTemplate template;
-    private final JwtUtil jwtUtil;
+
+    private final Logger logger = LoggerFactory.getLogger(AuthenticationFilter.class);
+
+    public String getRoless(String token) {
+        // Validate token
+        DecodedJWT decodedJWT = JWT.decode(token);
+
+        // Get "role" claim if it exists
+        Claim roleClaim = decodedJWT.getClaim("role");
 
 
-    public AuthenticationFilter(RouteValidator validator, JwtUtil jwtUtil, RestTemplate template) {
-        super(AuthenticationFilter.Config.class);
-        logger.info("AuthenticationFilter: Entered constructor.");
-        this.validator = validator;
-        this.jwtUtil = jwtUtil;
-        this.template = template;
+        if (roleClaim.isNull() || roleClaim.asString() == null) {
+            // "role" claim doesn't exist or is null
+            return "No Role Found"; // veya istediğiniz bir varsayılan değeri döndürebilirsiniz
+        }
+
+        return roleClaim.asString();
     }
 
-    /**
-     * Applies the authentication filter to the incoming request.
-     *
-     * @param config the configuration object for the filter
-     * @return the GatewayFilter instance
-     */
+    public String getRoles(String token) {
+        return template.getForEntity("http://localhost:9001/v1/auth/validate?token=" + token, String.class).getBody();
+
+    }
+
     @Override
     public GatewayFilter apply(Config config) {
         logger.info("AuthenticationFilter: Entered apply method.");
@@ -95,40 +61,52 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                 throw new RuntimeException("Missing or invalid Authorization header");
             }
 
+
             String authToken = token.substring(7);
 
             try {
-                template.getForObject("http://localhost:9090/api/v1/auth/validate?token=" + authToken, String.class);
+                ResponseEntity<String> response = template.getForEntity("http://localhost:9001/v1/auth/validate?token=" + authToken, String.class);
+
+                if (response.getStatusCode() == HttpStatus.OK ) {
+                    // Token doğrulama başarılı
+                    String roles = getRoles(authToken);
+                    List<String> userRoles = Arrays.asList(roles.split(",")); // Kullanıcı rollerini virgülle ayrılmış bir liste olarak alın
+                    // Kullanıcı rollerini kontrol et
+
+                    /*List<String> allowedRoles = config.getRoles();
+                    for (String userRole : userRoles) {
+                        if (!allowedRoles.contains(userRole)) {
+                            logger.error("AuthenticationFilter: Unauthorized access to application. User role is not allowed.");
+                            throw new RuntimeException("Unauthorized access to application. User role is not allowed.");
+                        }
+                    }*/
+                } else {
+                    System.out.println("invalid access...!");
+                    logger.error("AuthenticationFilter: Unauthorized access to application.");
+                    throw new RuntimeException("Unauthorized access to application");
+                }
+            } catch (RestClientResponseException e) {
+                // Uzak sunucudan hata yanıtı alındığında burada işleyebilirsiniz.
+                // Örneğin, HTTP durum kodlarına göre özel işlemler yapabilirsiniz.
+                System.out.println("HTTP Error: " + e.getStatusCode());
+                logger.error("AuthenticationFilter: Unauthorized access to application. HTTP Error: " + e.getStatusCode());
+                throw new RuntimeException("Unauthorized access to application");
             } catch (Exception e) {
-                System.out.println("invalid access...!"+e.getMessage());
-                logger.error("AuthenticationFilter: Unauthorized access to application."+ e.getMessage());
+                System.out.println("Connection error...!");
+                logger.error("AuthenticationFilter: Connection error: " + e.getMessage());
                 throw new RuntimeException("Unauthorized access to application");
             }
+
             logger.info("AuthenticationFilter: Token valid.");
             return chain.filter(exchange);
         };
     }
 
-    /**
-     * Configuration class for the authentication filter.
-     */
+    @Getter
     public static class Config {
         private List<String> roles;
 
-        /**
-         * Retrieves the list of roles.
-         *
-         * @return the list of roles
-         */
-        public List<String> getRoles() {
-            return roles;
-        }
 
-        /**
-         * Sets the list of roles.
-         *
-         * @param roles the list of roles
-         */
         public void setRoles(List<String> roles) {
             this.roles = roles;
         }
