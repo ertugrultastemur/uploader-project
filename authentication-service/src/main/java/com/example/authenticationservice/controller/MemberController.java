@@ -2,6 +2,7 @@ package com.example.authenticationservice.controller;
 
 import com.example.authenticationservice.dto.MemberResponse;
 import com.example.authenticationservice.service.MemberService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,14 +14,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.RestController;
 
-@RestController
-@RequestMapping("/v1/member")
-@AllArgsConstructor
+@Controller
+@RequestMapping("/v1/auth/member")
+@RequiredArgsConstructor
 public class MemberController {
 
     private final MemberService memberService;
     
-    @GetMapping("/getMember/{email}")
+    @GetMapping("/{email}")
     public ResponseEntity<MemberResponse> getMemberInfo (@PathVariable String email) {
         return ResponseEntity.ok(memberService.getMemberInfo(email));
     }
