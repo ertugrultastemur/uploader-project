@@ -23,7 +23,7 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
 
     private final Logger logger = LoggerFactory.getLogger(AuthenticationFilter.class);
 
-    
+
 
     @Override
     public GatewayFilter apply(Config config) {

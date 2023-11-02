@@ -12,12 +12,10 @@ spring:
             - Path=/v1/users/**
           filters:
 
-
         - id: uploader-service
           uri: lb://uploader-service
           predicates:
             - Path=/v1/doc/**
-            - HasRole=ADMIN
           filters:
             - StripPrefix=1
 
@@ -27,11 +25,6 @@ spring:
             - Path=/v1/auth/**
           filters:
 
-        - id: security
-          uri: lb://security
-          predicates:
-            - Path=/v1/autha/**
-          filters:
 
 
 
