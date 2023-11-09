@@ -20,11 +20,12 @@ public class WebConfig implements WebMvcConfigurer{
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/v1/**")
-                .allowedOrigins("http://127.0.0.1:5500/")
+                .allowedOrigins("http://localhost:5500")
                 .allowedMethods("GET", "POST", "PUT", "DELETE")
-                .allowedHeaders("application/json")
+                .allowedHeaders("multipart/form-data", "Authorization")  // Eğer başka header'lar kullanıyorsanız onları da ekleyin
                 .allowedOriginPatterns("*")
-                .allowCredentials(true);
+                .allowCredentials(true)
+                .exposedHeaders("Access-Control-Allow-Origin");
     }
 
 }
