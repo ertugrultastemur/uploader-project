@@ -11,9 +11,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 
 
-import lombok.AllArgsConstructor;
-import org.springframework.web.bind.annotation.RestController;
-
 @Controller
 @RequestMapping("/v1/auth/member")
 @RequiredArgsConstructor
