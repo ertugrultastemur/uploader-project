@@ -26,11 +26,8 @@ public class JwtFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         
-        // 1. Pull out a token from Request Header
         String jwt = resolveToken(request);
 
-        // 2. see if the token is valid with validateToken method
-        // If it is valid, wrong Authentication and put it into SecurityContext
         if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)!=null) {
             Authentication authentication = tokenProvider.getAuthentication(jwt);
             SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -39,7 +36,6 @@ public class JwtFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    // Pull out a token info from Request Header
     private String resolveToken(HttpServletRequest request) {
         String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
