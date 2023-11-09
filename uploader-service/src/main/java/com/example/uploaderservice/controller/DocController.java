@@ -3,8 +3,9 @@ package com.example.uploaderservice.controller;
 
 import com.example.uploaderservice.dto.DocDto;
 import com.example.uploaderservice.service.DocService;
-import okhttp3.Response;
-import okhttp3.ResponseBody;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
