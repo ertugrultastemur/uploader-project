@@ -26,7 +26,6 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -39,39 +38,31 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
 
     @Transactional
-    public MemberResponse signup(SignupRequest signupRequest) {
+    public void signup(SignupRequest signupRequest) {
         if (memberRepository.existsByEmail(signupRequest.getEmail())) {
             throw new RuntimeException("Please use another email.");
         }
-
         Member member = signupRequest.toMember(passwordEncoder);
-        return MemberResponse.of(memberRepository.save(member));
+        MemberResponse.of(memberRepository.save(member));
     }
 
     @Transactional
     public TokenRequest signin(SigninRequest signinRequest) {
-        // 1. Generate Authentication Token based on signin ID and PW
         UsernamePasswordAuthenticationToken authenticationToken = signinRequest.toAuthentication();
 
-        // 2. Password check
-        //    when authenticate method is called, loadUserByUsername in CustomUserDetailsService is called
         Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
 
         Member member = memberRepository.findByEmail(signinRequest.getEmail()).orElseThrow();
-        // Kullanıcı rollerini döngü ile alın ve SimpleGrantedAuthority nesnelerine çevirip Authentication'a ekleyin
         List<GrantedAuthority> authorities = new ArrayList<>(authentication.getAuthorities());
 
         for (String role : member.getRoles()) {
             authorities.add(new SimpleGrantedAuthority(role));
         }
 
-        // Oluşturulan authorities listesini kullanarak yeni bir Authentication nesnesi oluşturun
         Authentication authenticatedUser = new UsernamePasswordAuthenticationToken(authentication.getPrincipal(), authentication.getCredentials(), authorities);
 
-        // 3. Generate JWT token based on given info
         TokenRequest tokenRequest = tokenProvider.generateTokenDto(authenticatedUser);
 
-        // 4. Save RefreshToken
         RefreshToken refreshToken = RefreshToken.builder()
                 .key(authentication.getName())
                 .value(tokenRequest.getRefreshToken())
@@ -79,7 +70,6 @@ public class AuthService {
                 
         refreshTokenRepository.save(refreshToken);
         
-        // 5. Generate Token
         return tokenRequest;
     }
 
@@ -95,26 +85,20 @@ public class AuthService {
             throw new RuntimeException("Invalid Refresh Token.");
         }
 
-        // 2. Fetch Member ID from an access token
         Authentication authentication = tokenProvider.getAuthentication(tokenRequest.getAccessToken());
 
-        // 3. Fetch the Refresh token value bacsed on member ID
         RefreshToken refreshToken = refreshTokenRepository.findByKey(authentication.getName())
                 .orElseThrow(() -> new RuntimeException("This member is signed out."));
 
-        // 4. check if Refresh Token is matched
         if (!refreshToken.getValue().equals(tokenRequest.getRefreshToken())) {
             throw new RuntimeException("Token's member info is not matched.");
         }
 
-        // 5. create a new token
         TokenRequest newTokenRequest = tokenProvider.generateTokenDto(authentication);
 
-        // 6. update the refresh token
         RefreshToken newRefreshToken = refreshToken.updateValue(newTokenRequest.getRefreshToken());
         refreshTokenRepository.save(newRefreshToken);
 
-        // return the new refresh token
         return newTokenRequest;
     }
     
