@@ -1,6 +1,7 @@
 package com.example.gateway.configs;
 
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.http.HttpHeaders;
@@ -13,6 +14,7 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 @Component
+@Slf4j
 public class AuthorizationFilter implements GatewayFilter {
     private final RestTemplate template;
 
@@ -33,11 +35,13 @@ public class AuthorizationFilter implements GatewayFilter {
         if (requestPath.startsWith("/v1/doc")) {
             if (!role.contains("ROLE_ADMIN")) {
                 exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+                log.info("Unauthorized access: "+ role + HttpStatus.FORBIDDEN);
                 return exchange.getResponse().setComplete();
             }
         } else if (requestPath.startsWith("/v1/auth")) {
             if (!role.contains("ROLE_USER")) {
                 exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+                log.info("Unauthorized access: "+ role + HttpStatus.FORBIDDEN);
                 return exchange.getResponse().setComplete();
             }
         } else {
