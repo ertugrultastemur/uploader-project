@@ -32,7 +32,6 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException(username + " -> There's no such User."));
     }
 
-    // return UserDetails object if the member exists
     private UserDetails createUserDetails(Member member) {
         GrantedAuthority grantedAuthority = new SimpleGrantedAuthority("ROLE_USER");
 
