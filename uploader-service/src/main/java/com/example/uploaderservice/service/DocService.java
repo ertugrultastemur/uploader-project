@@ -38,7 +38,7 @@ public class DocService {
                 // Get the response body
                 String responseBody = responseSpec.bodyToMono(String.class).block();*/
 
-                String url = "http://172.16.29.141:7878/pdfread";
+                String url = "http://192.168.96.160:7878/pdfread";
 
 
                 OkHttpClient client = new OkHttpClient();
