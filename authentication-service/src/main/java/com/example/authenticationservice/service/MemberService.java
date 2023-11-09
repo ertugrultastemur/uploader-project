@@ -1,12 +1,9 @@
 package com.example.authenticationservice.service;
 
-import java.util.List;
 
 import com.example.authenticationservice.config.SecurityUtil;
-import com.example.authenticationservice.domain.Member;
 import com.example.authenticationservice.dto.MemberResponse;
 import com.example.authenticationservice.repository.MemberRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,13 +17,6 @@ public class MemberService {
 
     public MemberService(MemberRepository memberRepository){
         this.memberRepository = memberRepository;
-    }
-    
-    public List<Member> findByRole(String role) {
-
-        // code needed here
-
-        return memberRepository.findAll();
     }
 
     public MemberResponse getMemberInfo(String email) {
