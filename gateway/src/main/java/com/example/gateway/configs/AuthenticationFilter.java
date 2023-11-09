@@ -42,6 +42,7 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
             try {
                 ResponseEntity<String> response = template.getForEntity("http://localhost:9001/v1/auth/validate?token=" + authToken, String.class);
 
+
                 if (!(response.getStatusCode() == HttpStatus.OK )) {
                     System.out.println("invalid access...!");
                     logger.error("AuthenticationFilter: Unauthorized access to application.");
