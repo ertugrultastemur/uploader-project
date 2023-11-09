@@ -7,9 +7,9 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Setter;
 import lombok.Getter;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 @Entity
@@ -17,6 +17,8 @@ import java.util.Set;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@SQLDelete(sql = "UPDATE mistakes SET is_deleted = true WHERE id=id")
+@Where(clause = "is_deleted=false")
 public class Member {
 
     public Member(String email, String password, Set<String> roles) {
@@ -37,5 +39,8 @@ public class Member {
 
     @ElementCollection
     private Set<String> roles;
+
+    @Column(name = "is_deleted")
+    private boolean isDeleted = false;
     
 }
